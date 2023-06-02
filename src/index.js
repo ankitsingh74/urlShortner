@@ -8,7 +8,7 @@ const route = require("./routes/routes")
 const dotenv = require("dotenv");
 dotenv.config();
 
-mongoose.connect(process.env.MONGO_URI).then(
+mongoose.connect(process.env.MONGO_URI).then(()=>
     console.log('mongodb is connnected')
 ).catch( 
     err => { console.error(err.message) }
