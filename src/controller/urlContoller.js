@@ -1,29 +1,50 @@
 const urlModel = require('../model/urlModel')
-const { customAlphabet } = require('nanoid'); 
-// const {customAlphabet}= require("nanoid")
-// const shortid = require("shortid")
+// const { Alphabet } = require('nanoid'); 
+const {customAlphabet}= require("nanoid")
+// const shortId = require("shortid")//deprecated
 
 
  const createUrl = async (req,res) => {
-    let data = req.body.longUrl
-    let shortId= customAlphabet(data,10)
-    console.log(shortId())
-    let code= shortId()
-    let shortUrl=`https:localhost:3000/${code}`
-    req.body.shortUrl=shortUrl
-    req.body.urlCode=code;
-    let result= await urlModel.create(req.body)
+   try {
+      let data = req.body
+      console.log(Object.keys(data).length);
+      if(Object.keys(data).length==0) return res.status(400).send({status:false, message:"seems like your request is empty, please add your longUrl to your request"})
+      if(Object.keys(data).length!=1) return res.status(400).send({status:false, message:"please provide only one field"})
+ if(data.longUrl.length==0) return res.status(400).send({status:false, message:"please provide a longUrl to your request"})
+   
+      let findLongUrl = await urlModel.findOne({longUrl:data.longUrl})
+      if(findLongUrl) return res.status(400).send({status:false, message:"Url already exists"})
+      let shortId= customAlphabet(data.longUrl,10)
+      // console.log(shortId()) //depricated
+      let code= shortId() 
+      let shortUrl=`http:localhost:3000/${code}` 
+      req.body.shortUrl=shortUrl 
+      req.body.urlCode=code;
+    
+      let result= await urlModel.create(req.body)
+  
+      res.send({status:true,data:result}) 
+   } catch (error) {
+      if (error.message.includes("undefined")){
+         res.status(400).send({status:false, message:"please provide only field name longUrl"})
+      }
+      // if(error.message.includes("validation")) return res.status(400).send({status:false, message:"longUrl is invalid"})
+      res.status(500).send({status:false, message:error.message})
+   }
 
-    res.send({status:true,data:result})
- }
+ } 
 
  const getUrl = async (req,res) => {
-    let urlcode= req.params.urlCode
+    let urlcode= req.params.urlCode        //taking shortUrl into prams
+ 
     let url= await urlModel.findOne({urlCode:urlcode})
-    res.send({data:url})
-    // res.redirect(url.longUrl);
+    if(!url) return res.status(404).send({status:false, message:"longUrl not found for given shortUrl"})
+  
+    res.redirect(url.longUrl);  
+   //  res.send({data:url})
+ 
 
  }
-
+ 
 
 module.exports = {createUrl,getUrl}
